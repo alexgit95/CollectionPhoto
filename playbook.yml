@@ -1,0 +1,11 @@
+- hosts : web
+  become : true
+  tasks:
+    - name : add docker repos
+      apt-repository: repo="deb https://apt.dockerproject.org/repo ubuntu-xenial main"
+    
+    - name: Add Docker GPG apt Key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+    - name : install docker engine
