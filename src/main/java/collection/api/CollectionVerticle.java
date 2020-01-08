@@ -1,10 +1,9 @@
 package collection.api;
 
-import java.io.File;
 import java.nio.charset.Charset;
 import java.util.List;
 
-import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
@@ -29,8 +28,7 @@ public class CollectionVerticle extends AbstractVerticle {
 	@Override
 	public void start(Promise<Void> startPromise) throws Exception {
 		
-		contentClient=FileUtils.readFileToString(
-				new File(getClass().getClassLoader().getResource("index.html").getFile()),
+		contentClient=IOUtils.toString((getClass().getResourceAsStream("/index.html")),
 				Charset.forName("UTF-8"));
 		final Router router = Router.router(vertx);
 
