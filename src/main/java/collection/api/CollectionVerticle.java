@@ -5,14 +5,11 @@ import java.util.List;
 
 import org.apache.commons.io.IOUtils;
 
-import com.amazonaws.regions.Regions;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBScanExpression;
 import com.google.gson.Gson;
 
 import collection.model.PhotosRepo;
+import collection.services.DaoServices;
+import collection.services.impl.DaoServicesImpl;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.ext.web.Router;
@@ -21,13 +18,12 @@ import io.vertx.ext.web.handler.CorsHandler;
 
 public class CollectionVerticle extends AbstractVerticle {
 
-	static AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().withRegion(Regions.EU_WEST_3).build();
-	private static DynamoDBMapper mapper = new DynamoDBMapper(client);
+	private DaoServices daoServices;
 	private String contentClient;
 
 	@Override
 	public void start(Promise<Void> startPromise) throws Exception {
-		
+		daoServices= new DaoServicesImpl();
 		contentClient=IOUtils.toString((getClass().getResourceAsStream("/index.html")),
 				Charset.forName("UTF-8"));
 		final Router router = Router.router(vertx);
@@ -61,90 +57,73 @@ public class CollectionVerticle extends AbstractVerticle {
 		String nomRepo = ctx.request().getParam("nomrepo");
 		int annee = Integer.parseInt(ctx.request().getParam("annee"));
 		PhotosRepo toCreate = new PhotosRepo(annee, nomRepo);
-		System.out.println("sauvegarde");
 		try {
-			mapper.save(toCreate);
-			ctx.response().putHeader("Content-Type", "application/json").end("{\"status\":\"ok\"}");
+			daoServices.insert(toCreate);
+			outputOk(ctx);
 		} catch (Exception e) {
 			outputError(ctx, e);
 		}
 
 	}
-
+	
 	private void marquerTelephone(RoutingContext ctx) {
-
 		String id = ctx.request().getParam("id");
 		boolean setTel = Boolean.valueOf(ctx.request().getParam("istel"));
-
 		try {
-			PhotosRepo toEdit = mapper.load(PhotosRepo.class, id);
-			toEdit.setTelephone(setTel);
-			mapper.save(toEdit);
-			ctx.response().putHeader("Content-Type", "application/json").end("{\"status\":\"ok\"}");
+			daoServices.setTel(id, setTel);
+			outputOk(ctx);
 		} catch (Exception e) {
 			outputError(ctx, e);
 		}
-
-	}
+	}	
 
 	private void marquerServeur(RoutingContext ctx) {
-
 		String id = ctx.request().getParam("id");
 		boolean setter = Boolean.valueOf(ctx.request().getParam("isserveur"));
-
 		try {
-			PhotosRepo toEdit = mapper.load(PhotosRepo.class, id);
-			toEdit.setServeur(setter);
-			mapper.save(toEdit);
-			ctx.response().putHeader("Content-Type", "application/json").end("{\"status\":\"ok\"}");
+			daoServices.setServeur(id, setter);
+			outputOk(ctx);
 		} catch (Exception e) {
 			outputError(ctx, e);
 		}
-
-	}
+	}	
 
 	private void marquerHubic(RoutingContext ctx) {
-
 		String id = ctx.request().getParam("id");
 		boolean setter = Boolean.valueOf(ctx.request().getParam("ishubic"));
-
 		try {
-			PhotosRepo toEdit = mapper.load(PhotosRepo.class, id);
-			toEdit.setHubic(setter);
-			mapper.save(toEdit);
-			ctx.response().putHeader("Content-Type", "application/json").end("{\"status\":\"ok\"}");
+			daoServices.setHubic(id, setter);
+			outputOk(ctx);
 		} catch (Exception e) {
 			outputError(ctx, e);
 		}
-
 	}
 
 	private void marquerGlacier(RoutingContext ctx) {
-
 		String id = ctx.request().getParam("id");
 		boolean setter = Boolean.valueOf(ctx.request().getParam("isglacier"));
-
 		try {
-			PhotosRepo toEdit = mapper.load(PhotosRepo.class, id);
-			toEdit.setGlacier(setter);
-			mapper.save(toEdit);
-			ctx.response().putHeader("Content-Type", "application/json").end("{\"status\":\"ok\"}");
+			daoServices.setGlacier(id, setter);
+			outputOk(ctx);
 		} catch (Exception e) {
 			outputError(ctx, e);
 		}
-
 	}
 
 	private void allRepos(RoutingContext ctx) {
 		Gson gson = new Gson();
-		List<PhotosRepo> all = mapper.scan(PhotosRepo.class, new DynamoDBScanExpression());
+		List<PhotosRepo> all = daoServices.getAllRepos();
 		ctx.response().putHeader("Content-Type", "application/json").end(gson.toJson(all));
 	}
-
+	
 	private void outputError(RoutingContext ctx, Exception e) {
 		e.printStackTrace();
 		ctx.response().putHeader("Content-Type", "application/json")
 				.end("{\"status\":\"ko\",\"message\":" + e.getMessage() + "}");
+	}
+	
+	private void outputOk(RoutingContext ctx) {
+		ctx.response().putHeader("Content-Type", "application/json").end("{\"status\":\"ok\"}");
 	}
 	
 	private void generateHtml(RoutingContext ctx) {
