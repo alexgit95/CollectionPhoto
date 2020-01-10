@@ -39,8 +39,8 @@ public class CollectionVerticle extends AbstractVerticle {
 		router.get("/serveur").handler(this::marquerServeur);
 		router.get("/hubic").handler(this::marquerHubic);
 		router.get("/glacier").handler(this::marquerGlacier);
-		router.get("/").handler(this::allRepos);
-		router.get("/html").handler(this::generateHtml);
+		router.get("/all").handler(this::allRepos);
+		router.get("/").handler(this::generateHtml);
 
 		vertx.createHttpServer().requestHandler(router).listen(8888, res -> {
 			if (res.succeeded()) {
